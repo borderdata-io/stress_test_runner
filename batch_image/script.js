@@ -20,7 +20,7 @@ const prefix = '_TEST_SCRIPT_BOT_';
 const email = base + prefix+ '@devforth.io';
 const second_base = generate();
 const second_email = second_base + prefix + '@devforth.io';
-const activate_bonus = Math.random() > 0;
+const activate_bonus = Math.random() > 1;
 const affiliate_user = Math.random() > 0.5;
 console.log('activate_bonus', activate_bonus);
 console.log('affiliate_user', affiliate_user);
@@ -35,11 +35,11 @@ const prodConfig = {
   };
 (async () => {
     //   const browser = await puppeteer.launch();
-    const browser = await puppeteer.launch({ 
-        headless: true,
-        devtools: false,
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
+
+    const seconds = Math.floor(Math.random() * 4 * 60);
+    console.log('WAITING FOR ' + seconds + ' seconds before starting')
+    await delay(seconds * 1000);
+    const browser = await puppeteer.launch(prodConfig);
     const page = await browser.newPage();
     page.setDefaultNavigationTimeout(100000); 
     page.setDefaultTimeout(100000);
@@ -196,14 +196,16 @@ const prodConfig = {
     await page.keyboard.press('Enter');
     console.log('LOADING LOBBY')
 
-    const deposit_address_input = '#depositAddress';
-    await page.waitForSelector(deposit_address_input, {visible: true})
+    let deposit_address_input = '#depositAddress';
+    let DepositAddress = '';
 
-    const DepositAddress = await page.$eval(deposit_address_input, (input) => {
-        return input.getAttribute("value")
-    });
    
     if (activate_bonus) {
+        await page.waitForSelector(deposit_address_input, {visible: true})
+    
+        DepositAddress = await page.$eval(deposit_address_input, (input) => {
+            return input.getAttribute("value")
+        });
       console.log('activating bonus')
       await closeDeposit();
       await logout();
@@ -281,7 +283,7 @@ const prodConfig = {
         }
         console.log('open the game');
     })
-    await delay(8000)
+    await delay(15000);
     //focus on iframe
     await page.evaluate(() => {
         const iframe = document.querySelector('iframe');
