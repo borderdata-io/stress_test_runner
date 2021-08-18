@@ -19,7 +19,7 @@ function deploy_docker {
   echo "Building docker image"
   start=`date +%s`
 
-  REPO_ECR=`cat sls-stack-output.json | python -c 'import json,sys;obj=json.load(sys.stdin);print(obj["ECRRepository"])'`
+  REPO_ECR=`cat sls-stack-output.json | python3 -c 'import json,sys;obj=json.load(sys.stdin);print(obj["ECRRepository"])'`
   docker build batch_image -t $REPO_ECR:latest
 
   end=`date +%s`
@@ -42,7 +42,7 @@ function deploy_docker {
 }
 
 echo "Installing npm modules"
-npm ci
+[[ -d node_modules ]] || npm ci
 
 deploy_serverless
 deploy_docker

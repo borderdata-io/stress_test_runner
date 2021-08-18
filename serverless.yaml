@@ -5,7 +5,7 @@ plugins:
 
 provider:
   name: aws
-  region: ${opt:region, 'eu-central-1'}
+  region: ${opt:region}
 
 resources:
   Resources:
@@ -61,20 +61,6 @@ resources:
               Effect: Allow
               Principal:
                 Service: ec2.amazonaws.com
-        Policies:
-          - PolicyName: "DynamoAccess"
-            PolicyDocument:
-              Version: "2012-10-17"
-              Statement:
-                - Effect: Allow
-                  Action:
-                    - dynamodb:PutItem
-                    - dynamodb:Query
-                    - dynamodb:UpdateItem
-                    - dynamodb:DeleteItem
-                    - dynamodb:GetItem
-                  Resource:
-                    - !GetAtt DynamoTable.Arn
 
     Ec2InstanceProfile:
       Type: AWS::IAM::InstanceProfile
@@ -90,10 +76,8 @@ resources:
       Type: "AWS::Batch::JobDefinition"
       Properties:
           ContainerProperties:
-            Command: ["python", "md5_brute_force.py"]
+            Command: ["node", "script.js"]
             Environment:
-              - Name: DYNAMO_TABLE
-                Value: !Ref DynamoTable
               - Name: AWS_DEFAULT_REGION
                 Value: ${self:provider.region}
             Image: !Join ["", [!Ref "AWS::AccountId", ".dkr.ecr.${self:provider.region}.amazonaws.com/", !Ref ECRRepository]]
@@ -137,7 +121,7 @@ resources:
         CidrBlock: "173.31.0.0/16"
         MapPublicIpOnLaunch: true
         VpcId: !Ref BatchVpc
-        AvailabilityZone: !Join ["", ["${opt:region}", "b"]]
+        AvailabilityZone: !Join ["", ["${opt:region}", "a"]]
 
     BatchSubnetRouteTable:
       Type: AWS::EC2::SubnetRouteTableAssociation
@@ -184,32 +168,11 @@ resources:
               Action:
                 - "ecr:*"
 
-    DynamoTable:
-      Type: AWS::DynamoDB::Table
-      Properties:
-        BillingMode: PAY_PER_REQUEST
-        TableName: 'dynamo-table-${self:provider.region}'
-        KeySchema:
-          - AttributeName: "ID"
-            KeyType: "HASH"
-        AttributeDefinitions:
-          - AttributeName: "ID"
-            AttributeType: "S"
-        TimeToLiveSpecification:
-          AttributeName: TTL
-          Enabled: true
-
   Outputs:
     ECRRepository:
       Value: !Join ["", [!Ref "AWS::AccountId", ".dkr.ecr.${self:provider.region}.amazonaws.com/", !Ref ECRRepository]]
       Export:
         Name: ECRRepository-${self:provider.stage}
-
-    DynamoTable:
-      Value: !Ref DynamoTable
-      Export:
-        Name: DynamoTable-${self:provider.stage}
-
     BatchQueue:
       Value: !Ref SpotBatchJobQueue
       Export:
