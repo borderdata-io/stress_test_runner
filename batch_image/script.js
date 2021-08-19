@@ -15,6 +15,9 @@ function delay(time) {
         setTimeout(resolve, time)
     });
  }
+
+const game_array = ['Total Overdrive',  'All Lucky Clovers 20'];
+
 const base = generate();
 const prefix = '_TEST_SCRIPT_BOT_'; 
 const email = base + prefix+ '@devforth.io';
@@ -33,10 +36,11 @@ const prodConfig = {
     devtools: false,
     args: ['--no-sandbox', '--disable-setuid-sandbox']
   };
+  //node stress_test_control.js petri_aws 20
+  //./deploy.sh petri_aws ap-northeast-1
 (async () => {
     //   const browser = await puppeteer.launch();
-
-    const seconds = Math.floor(Math.random() * 4 * 60);
+    const seconds = Math.floor(Math.random() * 60);
     console.log('WAITING FOR ' + seconds + ' seconds before starting')
     await delay(seconds * 1000);
     const browser = await puppeteer.launch(prodConfig);
@@ -274,15 +278,35 @@ const prodConfig = {
 
     // go to the game
     console.log('go to the game')
-    await page.evaluate(() => {
-        const game = document.querySelectorAll('[href="/bgaming/all-lucky-clovers-100/"]')
+    // const select_game = Math.random();
+    // if (select_game > 0.5) {
+    //     await page.evaluate(() => {
+    //         const game = document.querySelectorAll('[href="/bgaming/all-lucky-clovers-100/"]')
+    //         if(game.length){
+    //             game[0].click();
+    //         } else {
+    //             game.click();
+    //         }
+    //         console.log('open the game');
+    //     })
+    // } else {
+    const  rand_game = game_array[Math.floor(Math.random()*game_array.length)];
+    await page.waitForSelector(('#viewport input'), {visible: true});
+    await page.type('#viewport input', rand_game);
+    console.log('selected game -> ', rand_game)
+    await page.keyboard.press('Enter');
+    const gameSelector = '#RootContentContainer > div + div > div + div + div > div > div > div + div > div > div > a';
+    await page.waitForSelector((gameSelector), {visible: true});
+    await page.evaluate((gameSelector) => {
+        const game = document.querySelectorAll(gameSelector)
         if(game.length){
             game[0].click();
         } else {
             game.click();
         }
         console.log('open the game');
-    })
+    }, gameSelector)
+    
     await delay(15000);
     //focus on iframe
     await page.evaluate(() => {
@@ -290,9 +314,19 @@ const prodConfig = {
         iframe.contentWindow.focus();   
         console.log('focus');
     })
-    // make bets
+    await page.evaluate(() => {
+        setInterval(async function(){
+            const iframe = document.querySelector('iframe');
+            iframe.contentWindow.focus();   
+            console.log('focus');
+        },15000);
+    })
+    setInterval(async function(){
+        await page.mouse.click(400, 400, { button: 'left' })
+        console.log('mouse click')
+    },3000)
     setInterval(async function(){
         await page.keyboard.press('Space');
         console.log('click space')
-    },500)
+    },600)
 })();
